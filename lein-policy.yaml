@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources:
+  SaiyoTemporaryIamPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Deny
+            Action: ec2:*
+            Resource: '*'
+            Condition:
+              StringEquals:
+                "ec2:ResourceTag/pjt": "lein"
+          - Effect: Deny
+            Action: dynamodb:*Item
+            Resource: 
+              Fn::Sub: arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/test
+          - Effect: Deny
+            Action:
+              - dynamodb:Scan
+              - dynamodb:Query
+            Resource:
+              - Fn::Sub: arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/test
+              - Fn::Sub: arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/test/index/*
+          - Effect: Deny
+            Action: s3:*Item
+            Resource: arn:aws:s3:::puttest/*
+          - Effect: Deny
+            Action: s3:*Bucket
+            Resource: arn:aws:s3:::puttest
+      
+  SaiyoTemporaryIamGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: lein-policy-test
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEC2FullAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+        - Ref: SaiyoTemporaryIamPolicy
+  
+  SaiyoGroupAddition:
+    Type: AWS::IAM::UserToGroupAddition
+    Properties: 
+      GroupName:
+        Ref: SaiyoTemporaryIamGroup
+      Users: 
+        - test01
